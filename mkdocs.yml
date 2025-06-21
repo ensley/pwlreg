@@ -49,8 +49,7 @@ plugins:
             separate_signature: True
             docstring_section_style: "table"
             merge_init_into_class: True
-  - mknotebooks:
+  - mkdocs-jupyter:
       execute: false
-      timeout: 100
       allow_errors: false
 copyright: "Copyright &copy; 2022-2023 RESOURCE INNOVATIONS. All rights reserved."

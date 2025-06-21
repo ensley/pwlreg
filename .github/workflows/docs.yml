@@ -2,35 +2,52 @@ name: Deploy Docs
 on:
   push:
     branches:
-      - master
       - main
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+  workflow_dispatch:
+
 permissions:
   contents: write
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.11
 
       - name: Upgrade pip
         run: |
-          pip install --constraint=.github/workflows/constraints.txt pip
+          pip install --upgrade pip
           pip --version
 
-      - name: Install Poetry
+      - name: Install Hatch
         run: |
-          pipx install --verbose --pip-args=--constraint=.github/workflows/constraints.txt poetry
-          poetry --version
+          pipx install --verbose hatch
+          hatch --version
 
-      - name: Install Nox
+      - name: Build documentation
         run: |
-          pipx install --pip-args=--constraint=.github/workflows/constraints.txt nox
-          pipx inject --pip-args=--constraint=.github/workflows/constraints.txt nox nox-poetry
-          nox --version
+          hatch run docs:build
 
       - name: Upload documentation
-        run: |
-          nox --force-color -s docs-deploy -- --force
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/
+
+  deploy:
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy documentation
+        id: deployment
+        uses: actions/deploy-pages@v4
